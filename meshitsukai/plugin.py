@@ -1,27 +1,28 @@
 # -*- coding:utf-8 -*-
-from . import config
 from . import logger
-from .langhelpers import debug
 from .job import Job
 
 
 class PluginManager(object):
-    def __init__(self, name, plugin_config={}):
+    def __init__(self, name, context):
+        self.context = context
+
         self.name = name
         self.jobs = []
         self.module = __import__(name)
         self.register_jobs()
         self.outputs = []
-        if name in config:
+        settings = context.settings
+        if name in settings:
             logger.info("config found for: " + name)
-            self.module.config = config[name]
+            self.module.config = settings[name]
         if 'setup' in dir(self.module):
             self.module.setup()
 
     def register_jobs(self):
         if 'crontable' in dir(self.module):
             for interval, function in self.module.crontable:
-                self.jobs.append(Job(interval, eval("self.module." + function)))
+                self.jobs.append(Job(interval, eval("self.module." + function), self.context))
             logger.info(self.module.crontable)
             self.module.crontable = []
         else:
@@ -30,7 +31,7 @@ class PluginManager(object):
     def do(self, function_name, data):
         if function_name in dir(self.module):
             # this makes the plugin fail with stack trace in debug mode
-            if not debug:
+            if not self.settings.get("debug"):
                 try:
                     eval("self.module." + function_name)(data)
                 except:

@@ -1,19 +1,14 @@
 # -*- coding:utf-8 -*-
 import time
-import sys
-import glob
-import os.path
 from slackclient import SlackClient
-from .plugin import PluginManager
-from . import directory
 from . import logger
 
 
 class RtmBot(object):
-    def __init__(self, token):
+    def __init__(self, token, plugins):
         self.last_ping = 0
         self.token = token
-        self.bot_plugins = []
+        self.bot_plugins = plugins or []
         self.slack_client = None
 
     def connect(self):
@@ -23,7 +18,6 @@ class RtmBot(object):
 
     def start(self):
         self.connect()
-        self.load_plugins()
         while True:
             for reply in self.slack_client.rtm_read():
                 self.input(reply)
@@ -63,17 +57,3 @@ class RtmBot(object):
     def crons(self):
         for plugin in self.bot_plugins:
             plugin.do_jobs()
-
-    def load_plugins(self):
-        for plugin in glob.glob(os.path.join(directory, '/plugins/*')):
-            sys.path.insert(0, plugin)
-            sys.path.insert(0, os.path.join(directory, '/plugins/'))
-
-            for suffix in ['/plugins/*.py', '/plugins/*/*.py']:
-                for plugin in glob.glob(os.path.join(directory, suffix)):
-                    logger.info(plugin)
-                    name = plugin.split('/')[-1][:-3]
-                    # try:
-                    self.bot_plugins.append(PluginManager(name))
-                    # except:
-                    #     print "error loading plugin %s" % name

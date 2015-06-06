@@ -1,24 +1,17 @@
 # -*- coding:utf-8 -*-
 import sys
-import os
 import logging
 import yaml
+import argparse
 logger = logging.getLogger(__name__)
+from meshitsukai.configurator import Configurator
 
 
 class UnknownChannel(Exception):
     pass
 
-directory = None
-
-config = {
-}
-
 
 def main_loop(bot):
-    if "LOGFILE" in config:
-        logger.basicConfig(filename=config["LOGFILE"], level=logger.INFO, format='%(asctime)s %(message)s')
-    logger.info(directory)
     try:
         bot.start()
     except KeyboardInterrupt:
@@ -26,22 +19,38 @@ def main_loop(bot):
     except:
         logger.exception('OOPS')
 
-if __name__ == "__main__":
-    from meshitsukai.bot import RtmBot
 
-    directory = os.getcwd()
-    with open(os.path.join(directory, 'rtmbot.conf')) as rf:
-        config = yaml.load(rf)
+def setup_logging(args):
+    if args.logging is None:
+        return
+    else:
+        level = getattr(logging, args.logging)
+        logging.basicConfig(level=level)
 
-    debug = config["DEBUG"]
-    bot = RtmBot(config["SLACK_TOKEN"])
-    site_plugins = []
-    files_currently_downloading = []
-    job_hash = {}
 
-    if "DAEMON" in config:
-        if config["DAEMON"]:
+def main(sys_args=None):
+    sys_args = sys_args or sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config")
+    parser.add_argument("--logging", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO")
+    args = parser.parse_args(sys_args)
+    setup_logging(args)
+
+    with open(args.config) as rf:
+        settings = yaml.load(rf)
+
+    configurator = Configurator(settings)
+    bot = configurator.make_app()
+
+    logger.debug("running as daemon? .. %s", settings.get("DAEMON", False))
+    if "DAEMON" in settings:
+        if settings["DAEMON"]:
             import daemon
             with daemon.DaemonContext():
                 main_loop(bot)
-    main_loop(bot)
+    else:
+        main_loop(bot)
+
+
+if __name__ == "__main__":
+    main()
