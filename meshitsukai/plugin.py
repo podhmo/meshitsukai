@@ -5,7 +5,7 @@ from .langhelpers import debug
 from .job import Job
 
 
-class Plugin(object):
+class PluginManager(object):
     def __init__(self, name, plugin_config={}):
         self.name = name
         self.jobs = []

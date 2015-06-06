@@ -4,7 +4,7 @@ import sys
 import glob
 import os.path
 from slackclient import SlackClient
-from .plugin import Plugin
+from .plugin import PluginManager
 from . import directory
 from . import logger
 
@@ -74,6 +74,6 @@ class RtmBot(object):
                     logger.info(plugin)
                     name = plugin.split('/')[-1][:-3]
                     # try:
-                    self.bot_plugins.append(Plugin(name))
+                    self.bot_plugins.append(PluginManager(name))
                     # except:
                     #     print "error loading plugin %s" % name
