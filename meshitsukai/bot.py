@@ -3,12 +3,10 @@ import time
 import sys
 import glob
 import os.path
-import logging
 from slackclient import SlackClient
-from .langhelpers import dbg
 from .plugin import Plugin
 from . import directory
-logger = logging.getLogger(__name__)
+from . import logger
 
 
 class RtmBot(object):
@@ -44,7 +42,7 @@ class RtmBot(object):
     def input(self, data):
         if "type" in data:
             function_name = "process_" + data["type"]
-            dbg("got {}".format(function_name))
+            logger.debug("got {}".format(function_name))
             for plugin in self.bot_plugins:
                 plugin.register_jobs()
                 plugin.do(function_name, data)

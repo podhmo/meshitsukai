@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import time
-from .langhelpers import dbg, debug
+from .langhelpers import debug
+from . import logger
 
 
 class Job(object):
@@ -18,7 +19,7 @@ class Job(object):
                 try:
                     self.function()
                 except:
-                    dbg("problem")
+                    logger.debug("problem")
             else:
                 self.function()
             self.lastrun = time.time()
