@@ -40,6 +40,16 @@ if you will write a plugin by your own hands, at least two files is needed.
 - plugin implemntation (.py)
 - info file. (.plugin)
 
+file structure ::
+
+  .
+  ├── plugins
+  │   ├── __init__.py
+  │   ├── dummy.plugin
+  │   └── dummy.py
+  └── config.ini
+
+
 plugin implemntation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
