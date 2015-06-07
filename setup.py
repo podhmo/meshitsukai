@@ -18,7 +18,6 @@ except IOError:
 install_requires = [
     'setuptools',
     'requests',
-    'pyyaml',
     'python-daemon',
     'yapsy',
     'websocket-client',

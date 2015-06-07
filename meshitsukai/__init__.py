@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 import sys
 import logging
-import yaml
 import argparse
 logger = logging.getLogger(__name__)
 from meshitsukai.configurator import Configurator
@@ -36,15 +35,12 @@ def main(sys_args=None):
     args = parser.parse_args(sys_args)
     setup_logging(args)
 
-    with open(args.config) as rf:
-        settings = yaml.load(rf)
-
-    configurator = Configurator(settings)
+    configurator = Configurator.from_ini_file(args.config)
     bot = configurator.make_app()
 
-    logger.debug("running as daemon? .. %s", settings.get("DAEMON", False))
-    if "DAEMON" in settings:
-        if settings["DAEMON"]:
+    DAEMON = configurator.context.is_daemon
+    logger.debug("running as daemon? .. %s", DAEMON)
+    if DAEMON:
             import daemon
             with daemon.DaemonContext():
                 main_loop(bot)

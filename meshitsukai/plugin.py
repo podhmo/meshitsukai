@@ -12,8 +12,8 @@ class Plugin(IPlugin):
         self.outputs = []
         self.config = None
 
-    def setup(self, config):
-        self.config = config
+    def setup(self, context):
+        self.context = context
 
     def catch_all(self, data):
         pass
@@ -30,7 +30,7 @@ class PluginHandler(object):
         self.setup()
 
     def setup(self):
-        self.plugin.setup(self.context.settings)
+        self.plugin.setup(self.context)
         self.register_jobs()
 
     def register_jobs(self):
