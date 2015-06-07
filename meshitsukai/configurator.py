@@ -17,7 +17,7 @@ class Configurator(object):
     def __init__(self, settings):
         self.settings = settings
         self.context = Context(settings)
-        self.manager = PluginManager()
+        self.manager = PluginManager(plugin_info_ext="plugin")
         self.setup()
 
     def setup(self):

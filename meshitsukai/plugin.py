@@ -15,7 +15,7 @@ class Plugin(IPlugin):
     def setup(self, config):
         self.config = config
 
-    def catch_all(self):
+    def catch_all(self, data):
         pass
 
 
@@ -40,7 +40,7 @@ class PluginHandler(object):
             self.plugin.crontable = []
 
     def do(self, function_name, data):
-        logger.debug("do -- %s (plugin=%s)", function_name, self.plugin)
+        logger.debug("do -- %s (plugin=%s)", function_name, self.plugin.__class__.__name__)
         if hasattr(self.plugin, function_name):
             if not self.context.debug:
                 try:
