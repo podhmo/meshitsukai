@@ -1,6 +1,4 @@
 # -*- coding:utf-8 -*-
-import glob
-import sys
 import os
 from .plugin import PluginHandler, PluginManager
 from .bot import RtmBot

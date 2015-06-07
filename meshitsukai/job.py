@@ -15,7 +15,7 @@ class Job(object):
 
     def check(self):
         if self.lastrun + self.interval < time.time():
-            if context.debug:
+            if self.context.debug:
                 try:
                     self.function()
                 except:
@@ -23,4 +23,4 @@ class Job(object):
             else:
                 self.function()
             self.lastrun = time.time()
-            pass
+
