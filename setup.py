@@ -57,5 +57,6 @@ setup(name='meshitsukai',
       tests_require=tests_require,
       test_suite="meshitsukai.tests",
       entry_points="""
+      [console_scripts]
+      meshitsukai = meshitsukai:main
 """)
-
