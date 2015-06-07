@@ -1,47 +1,57 @@
 # -*- coding:utf-8 -*-
 from . import logger
 from .job import Job
-from importlib import import_module
+from yapsy.IPlugin import IPlugin
+from yapsy.PluginManager import PluginManager
 
 
-class PluginManager(object):
-    def __init__(self, name, context):
+class Plugin(IPlugin):
+    def __init__(self):
+        super(Plugin, self).__init__()
+        self.crontable = []
+        self.outputs = []
+        self.config = None
+
+    def setup(self, config):
+        self.config = config
+
+    def catch_all(self):
+        pass
+
+
+class PluginHandler(object):
+    def __init__(self, plugin, context):
         self.context = context
 
-        self.name = name
+        self.plugin = plugin
         self.jobs = []
-        self.module = import_module(name)
-        self.register_jobs()
         self.outputs = []
-        settings = context.settings
-        if name in settings:
-            logger.info("config found for: " + name)
-            self.module.config = settings[name]
-        if 'setup' in dir(self.module):
-            self.module.setup()
+
+        self.setup()
+
+    def setup(self):
+        self.plugin.setup(self.context.settings)
+        self.register_jobs()
 
     def register_jobs(self):
-        if 'crontable' in dir(self.module):
-            for interval, function in self.module.crontable:
-                self.jobs.append(Job(interval, getattr(self.module, function), self.context))
-            logger.info(self.module.crontable)
-            self.module.crontable = []
-        else:
-            self.module.crontable = []
+        for interval, function in self.plugin.crontable:
+            self.jobs.append(Job(interval, getattr(self.plugin, function), self.context))
+            logger.info(self.plugin.crontable)
+            self.plugin.crontable = []
 
     def do(self, function_name, data):
-        if function_name in dir(self.module):
-            # this makes the plugin fail with stack trace in debug mode
+        logger.debug("do -- %s (plugin=%s)", function_name, self.plugin)
+        if hasattr(self.plugin, function_name):
             if not self.context.debug:
                 try:
-                    getattr(self.module, function_name)(data)
+                    getattr(self.plugin, function_name)(data)
                 except:
                     logger.debug("problem in module {} {}".format(function_name, data))
             else:
-                getattr(self.module, function_name)(data)
-        if "catch_all" in dir(self.module):
+                getattr(self.plugin, function_name)(data)
+        if hasattr(self.plugin, "catch_all"):
             try:
-                self.module.catch_all(data)
+                self.plugin.catch_all(data)
             except:
                 logger.debug("problem in catch all")
 
@@ -51,13 +61,8 @@ class PluginManager(object):
 
     def do_output(self):
         output = []
-        while True:
-            if 'outputs' in dir(self.module):
-                if len(self.module.outputs) > 0:
-                    logger.info("output from {}".format(self.module))
-                    output.append(self.module.outputs.pop(0))
-                else:
-                    break
-            else:
-                self.module.outputs = []
+        for out in self.plugin.outputs:
+            logger.info("output from {}".format(self.plugin))
+            output.append(out)
+        self.plugin.outputs = []
         return output
