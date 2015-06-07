@@ -20,6 +20,7 @@ install_requires = [
     'requests',
     'pyyaml',
     'python-daemon',
+    'yapsy',
     'websocket-client',
     'slackclient',
 ]

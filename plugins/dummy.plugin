@@ -1,0 +1,7 @@
+[Core]
+name = dummy
+module = dummy
+
+[Document]
+author = podhmo
+description = simple dummy plugin

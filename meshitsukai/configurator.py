@@ -2,7 +2,7 @@
 import glob
 import sys
 import os
-from .plugin import PluginManager
+from .plugin import PluginHandler, PluginManager
 from .bot import RtmBot
 from . import logger
 
@@ -17,6 +17,12 @@ class Configurator(object):
     def __init__(self, settings):
         self.settings = settings
         self.context = Context(settings)
+        self.manager = PluginManager(plugin_info_ext="plugin")
+        self.setup()
+
+    def setup(self):
+        self.manager.setPluginPlaces([os.path.join(self.directory, "plugins")])
+        self.manager.collectPlugins()
 
     @property
     def directory(self):
@@ -28,18 +34,10 @@ class Configurator(object):
 
     def load_plugins(self):
         loaded = []
-        plugin_dir = os.path.join(self.directory, 'plugins')
-        if not os.path.exists(plugin_dir):
-            raise RuntimeError("{} is not found. as plugins directory".format(plugin_dir))
-        logger.info("load-path insert: %s", plugin_dir)
-        sys.path.insert(0, plugin_dir)
 
-        for plugin in glob.glob(os.path.join(plugin_dir, "*.py")):
-            if plugin.endswith("__init__.py"):
-                continue
-            logger.info(plugin)
-            name = "plugins.{}".format(os.path.splitext(os.path.basename(plugin))[0])
-            loaded.append(PluginManager(name, self.context))
+        for plugin in self.manager.getAllPlugins():
+            logger.info("loaded plugin: %s", plugin.name)
+            loaded.append(PluginHandler(plugin.plugin_object, self.context))
         return loaded
 
     def make_app(self):
