@@ -2,7 +2,7 @@
 import os
 from configparser import ConfigParser
 from .plugin import PluginHandler, PluginManager
-from .bot import RtmBot
+from .bot import Bot, SlackMediator
 from . import logger
 
 
@@ -67,4 +67,4 @@ class Configurator(object):
 
     def make_app(self):
         plugins = self.load_plugins()
-        return RtmBot(self.context.token, plugins)
+        return Bot(SlackMediator(self.context.token), plugins)

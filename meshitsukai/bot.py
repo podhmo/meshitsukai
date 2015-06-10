@@ -4,33 +4,55 @@ from slackclient import SlackClient
 from . import logger
 
 
-class RtmBot(object):
-    def __init__(self, token, plugins):
-        self.last_ping = 0
+class SlackMediator(object):
+    def __init__(self, token):
         self.token = token
-        self.bot_plugins = plugins or []
-        self.slack_client = None
+        self.slack_client = SlackClient(self.token)
+
+    def read(self):
+        return self.slack_client.rtm_read()
+
+    def ping(self):
+        return self.slack_client.server.ping()
+
+    def find_channel(self, name):
+        return self.slack_client.server.channels.find(name)
 
     def connect(self):
         """Convenience method that creates Server instance"""
-        self.slack_client = SlackClient(self.token)
         self.slack_client.rtm_connect()
+
+
+class Bot(object):
+    def __init__(self, mediator, plugins):
+        self.last_ping = 0
+        self.bot_plugins = plugins or []
+        self.mediator = mediator
+
+    def _wait(self):
+        time.sleep(.1)
+
+    def connect(self):
+        self.mediator.connect()
 
     def start(self):
         self.connect()
         while True:
-            for reply in self.slack_client.rtm_read():
-                self.input(reply)
-            self.crons()
-            self.output()
-            self.autoping()
-            time.sleep(.1)
+            self.run()
+
+    def run(self):
+        for reply in self.mediator.read():
+            self.input(reply)
+        self.crons()
+        self.output()
+        self.autoping()
+        self._wait()
 
     def autoping(self):
         # hardcode the interval to 3 seconds
         now = int(time.time())
         if now > self.last_ping + 3:
-            self.slack_client.server.ping()
+            self.mediator.ping()
             self.last_ping = now
 
     def input(self, data):
@@ -45,10 +67,10 @@ class RtmBot(object):
         for plugin in self.bot_plugins:
             limiter = False
             for output in plugin.do_output():
-                channel = self.slack_client.server.channels.find(output[0])
+                channel = self.mediator.find_channel(output[0])
                 if channel is not None and output[1] is not None:
                     if limiter is True:
-                        time.sleep(.1)
+                        self._wait()
                         limiter = False
                     message = output[1]
                     channel.send_message("{}".format(message))
