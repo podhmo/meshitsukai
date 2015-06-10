@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import os
 from configparser import ConfigParser
-from .plugin import PluginHandler, PluginManager
+from .plugin import PluginHandler, PluginManager, Plugin
 from .bot import Bot, SlackMediator
 from . import logger
 
@@ -11,7 +11,7 @@ class Context(object):
 
     def __init__(self, config):
         self.config = config
-        self.manager = PluginManager(plugin_info_ext="plugin")
+        self.manager = PluginManager(plugin_info_ext="plugin", categories_filter={"Default": Plugin})
 
     def __getitem__(self, k):
         return self.config.get(self.section_name, k)
