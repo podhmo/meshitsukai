@@ -1,0 +1,7 @@
+[Core]
+name = relay
+module = relay
+
+[Document]
+author = podhmo
+description = simple relay plugin
