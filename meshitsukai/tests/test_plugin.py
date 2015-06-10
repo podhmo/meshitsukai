@@ -13,7 +13,36 @@ class LineStripPlugin(Plugin):
         self.outputs.append((data["channel"], result))
 
 
-class PluginTestSampleTests(unittest.TestCase):
+class UsuallyUnitTestSampleTests(unittest.TestCase):
+    def _makeOne(self):
+        return LineStripPlugin()
+
+    def test_linestrip__nostrip(self):
+        message = "@foo@"
+        target = self._makeOne()
+        result = target.line_strip(message)
+        self.assertEqual(result, "@foo@")
+
+    def test_linestrip__strip(self):
+        message = " foo "
+        target = self._makeOne()
+        result = target.line_strip(message)
+        self.assertEqual(result, "foo")
+
+
+class PluginUnitTestSampleTests(unittest.TestCase):
+    def _makeOne(self):
+        return LineStripPlugin()
+
+    def test_it(self):
+        data = {"text": " foo ", "channel": "*general*"}
+        target = self._makeOne()
+        target.process_message(data)
+
+        self.assertEqual(target.outputs[-1], ("*general*", "foo"))
+
+
+class PluginIntegrationTestSampleTests(unittest.TestCase):
     def _makeOne(self, *args, **kwargs):
         from meshitsukai.testing import dummy_plugin
         return dummy_plugin(self._getTarget(), *args, **kwargs)
