@@ -24,7 +24,7 @@ class Test(unittest.TestCase):
         bot.run()
 
         result = source.find_channel("general").getvalue()
-        self.assertEqual(result, ["`*hello*`"])
+        self.assertEqual(result, ["<@*user*> `*hello*`"])
 
     def test_not_reply(self):
         from meshitsukai.testing import dummy_source, dummy_bot
