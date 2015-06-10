@@ -1,0 +1,7 @@
+[Core]
+name = hello
+module = hello
+
+[Document]
+author = podhmo
+description = simple hello plugin

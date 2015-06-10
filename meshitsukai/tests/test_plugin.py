@@ -1,16 +1,20 @@
 # -*- coding:utf-8 -*-
 import unittest
 from meshitsukai.plugin import Plugin
+from meshitsukai.view import as_view
 
 
 # plugin definition. usually plugin implementation is separated from test code.
 class LineStripPlugin(Plugin):
+    def starts_from_bot(self, request):
+        return request.body.startswith("bot:")
+
+    @as_view(predicate="starts_from_bot")
+    def process_message(self, request):
+        return request.Response(self.line_strip(request.body[4:]))
+
     def line_strip(self, message):
         return "".join(line.strip() for line in message.split("\n"))
-
-    def process_message(self, data):
-        result = self.line_strip(data["text"])
-        self.outputs.append((data["channel"], result))
 
 
 class UsuallyUnitTestSampleTests(unittest.TestCase):
@@ -35,11 +39,19 @@ class PluginUnitTestSampleTests(unittest.TestCase):
         return LineStripPlugin()
 
     def test_it(self):
-        data = {"text": " foo ", "channel": "*general*"}
+        data = {"text": "bot:\n foo ", "channel": "*general*"}
         target = self._makeOne()
         target.process_message(data)
 
+        self.assertEqual(len(target.outputs), 1)
         self.assertEqual(target.outputs[-1], ("*general*", "foo"))
+
+    def test_not_match(self):
+        data = {"text": "hmm:\n foo ", "channel": "*general*"}
+        target = self._makeOne()
+        target.process_message(data)
+
+        self.assertEqual(len(target.outputs), 0)
 
 
 class PluginIntegrationTestSampleTests(unittest.TestCase):
@@ -56,6 +68,7 @@ class PluginIntegrationTestSampleTests(unittest.TestCase):
         source = dummy_source()
         bot = dummy_bot([plugin], source)
         text = """\
+bot:
 section
   subsection
   subsection
