@@ -9,4 +9,4 @@ class HelloPlugin(Plugin):
 
     @as_view(predicate="in_hello")
     def process_message(self, request):
-        return "`*hello*`"
+        return "<@{user}> `*hello*`".format(user=request.user)
