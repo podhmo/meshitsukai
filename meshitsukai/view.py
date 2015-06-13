@@ -25,7 +25,7 @@ class Request(object):
 
     @property
     def body(self):
-        return self._rawdata.get("text")
+        return self._rawdata.get("text") or ""
 
     @property
     def user(self):

@@ -62,7 +62,6 @@ class PluginHandler(object):
     def do_output(self):
         output = []
         for out in self.plugin.outputs:
-            logger.info("output from {}".format(self.plugin))
             output.append(out)
         self.plugin.outputs = []
         return output

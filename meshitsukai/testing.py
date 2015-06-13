@@ -4,12 +4,15 @@ from .plugin import PluginHandler
 
 
 class DummyChannel(object):
-    def __init__(self, name):
+    def __init__(self, name, cont=None):
         self.name = name
         self.outputs = []
+        self.cont = cont
 
     def send_message(self, message):
         self.outputs.append(message)
+        if self.cont is not None:
+            self.cont(message)
 
     def getvalue(self):
         return self.outputs.copy()
@@ -28,19 +31,51 @@ class ChannelPool(object):
             self.pool[name] = self.Channel(name)
         return self.pool[name]
 
+    def __iter__(self):
+        for ch in sorted(self.pool.values(), key=lambda ch: ch.name):
+            yield ch
+
+
+class DummyTimeKeeper(object):
+    def wait(self):
+        pass
+
+    def __next__(self):
+        return None
+
+    def __iter__(self):
+        return self
+
 
 class DummyMediator(object):
-    def __init__(self, source):
+    def __init__(self, source, time_keeper=None):
         self.source = source
+        self.time_keeper = time_keeper or DummyTimeKeeper()
+
+    def time_keeping(self):
+        return iter(self.time_keeper)
+
+    def wait(self):
+        self.time_keeper.wait()
 
     def read(self):
         return self.source.shift_message()
+
+    def send(self, output, wait_itr):
+        channel_id, message = output
+        channel = self.find_channel(channel_id)
+        if channel is not None and message is not None:
+            next(wait_itr)
+            channel.send_message(message)
 
     def ping(self):
         pass
 
     def find_channel(self, name):
         return self.source.find_channel(name)
+
+    def connect(self):
+        pass
 
 
 class DummySource(object):
@@ -53,7 +88,8 @@ class DummySource(object):
 
     def shift_message(self):
         item = self.queue[-1]
-        self.queue.append([])
+        if item:
+            self.queue.append([])
         return item
 
     def generate_channel(self, name):
@@ -72,29 +108,18 @@ class DummySource(object):
         return result
 
 
-class DummyBot(Bot):
-    def _wait(self):
-        pass
-
-    def autoping(self):
-        pass
-
-    def __init__(self, mediator, plugins):
-        super(DummyBot, self).__init__(mediator, plugins)
-
-
 class DummyContext(object):
     debug = True
 
 
-def dummy_source(pool=None):
-    pool = pool or ChannelPool(DummyChannel)
+def dummy_source(pool=None, Channel=DummyChannel):
+    pool = pool or ChannelPool(Channel)
     return DummySource(pool)
 
 
-def dummy_bot(plugins, source):
-    mediator = DummyMediator(source)
-    return DummyBot(mediator, plugins)
+def dummy_bot(plugins, source, time_keeper=None):
+    mediator = DummyMediator(source, time_keeper=time_keeper)
+    return Bot(mediator, plugins)
 
 
 def dummy_plugin(cls, *args, _context=None, **kwargs):

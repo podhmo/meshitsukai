@@ -40,7 +40,7 @@ class RelayPlugin(Plugin):
         if key not in self.tmp:
             return "ng"
         self.keys[key] = request.channel
-        return "ok"
+        return "ok: `curl http://localhost:4444 -X POST -d key={key} -d message`".format(key=key)
 
     def relay(self, key, message):
         channel = self.keys[key]
@@ -71,11 +71,11 @@ class App(object):
             request_body_size = 0
 
         request_body = environ['wsgi.input'].read(request_body_size)
-        d = parse_qs(request_body)
+        d = parse_qs(request_body.decode("utf-8"))
         logger.debug("POST: -- %s", d)
         start_response(status, headers)
         try:
-            self.plugin.relay(d[b"key"][0].decode("utf-8"), d[b"message"][0].decode("utf-8"))
+            self.plugin.relay(d["key"][0], d["message"][0])
         except Exception as e:
             return [str(e).encode("utf-8")]
         return [b"ok"]
