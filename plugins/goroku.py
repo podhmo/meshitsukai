@@ -54,7 +54,7 @@ class Goroku(Plugin):
 
     def predicate(self, request):
         line = request.body.strip()
-        return any(line.startswith(s) for s in self.specials) or any(u in line for u in self.users)
+        return any(line.startswith(s) for s in self.specials) or any(line.startswith(u) for u in self.users)
 
     @reify
     def users(self):
@@ -70,7 +70,7 @@ class Goroku(Plugin):
         name, *args = shlex.split(request.body)
         if name.startswith("$create"):
             newname = " ".join(args)
-            self.users.add(newname)
+            self.users.add("${}".format(newname))
             return create(newname)
         elif name.startswith("$list"):
             return "\n".join(u.name for u in Session.query(User).all())
