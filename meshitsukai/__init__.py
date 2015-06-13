@@ -32,11 +32,13 @@ def main(sys_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("config")
     parser.add_argument("--logging", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO")
+    parser.add_argument("-p", "--plugins", default=None, help="',' separated plugin name list")
     args = parser.parse_args(sys_args)
     setup_logging(args)
 
     configurator = Configurator.from_ini_file(args.config)
-    bot = configurator.make_app()
+    plugins = configurator.load_plugins([e.strip() for e in args.plugins.split(",")])
+    bot = configurator.make_app(plugins)
 
     DAEMON = configurator.context.is_daemon
     logger.debug("running as daemon? .. %s", DAEMON)

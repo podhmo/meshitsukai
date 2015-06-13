@@ -20,6 +20,7 @@ class SlackMediator(object):
 
     def connect(self):
         """Convenience method that creates Server instance"""
+        logger.info("connect to slack ..")
         self.slack_client.rtm_connect()
 
 

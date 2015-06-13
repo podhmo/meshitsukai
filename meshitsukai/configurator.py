@@ -58,13 +58,13 @@ class Configurator(object):
         parser.set(Context.section_name, "here", filename)
         return cls(parser)
 
-    def load_plugins(self):
+    def load_plugins(self, active_plugins=None):
         loaded = []
         for plugin in self.context.manager.getAllPlugins():
-            logger.info("loaded plugin: %s", plugin.name)
-            loaded.append(PluginHandler(plugin.plugin_object, self.context))
+            if active_plugins is None or plugin.name in active_plugins:
+                logger.info("loaded plugin: %s", plugin.name)
+                loaded.append(PluginHandler(plugin.plugin_object, self.context))
         return loaded
 
-    def make_app(self):
-        plugins = self.load_plugins()
+    def make_app(self, plugins):
         return Bot(SlackMediator(self.context.token), plugins)
