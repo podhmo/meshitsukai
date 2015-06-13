@@ -16,8 +16,12 @@ class Console(Cmd):
     def do_EOF(self, line):
         return True
 
+    def emptyline(self):
+        pass
+
     def default(self, line):
         self.current.send_message(line)
+        self.source.generate_message(line, channel=self.current.name, user=self.user)
 
     def do_list(self, line):
         for c in self.source.pool:

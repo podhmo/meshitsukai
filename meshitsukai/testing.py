@@ -4,12 +4,15 @@ from .plugin import PluginHandler
 
 
 class DummyChannel(object):
-    def __init__(self, name):
+    def __init__(self, name, cont=None):
         self.name = name
         self.outputs = []
+        self.cont = cont
 
     def send_message(self, message):
         self.outputs.append(message)
+        if self.cont is not None:
+            self.cont(message)
 
     def getvalue(self):
         return self.outputs.copy()
@@ -40,17 +43,20 @@ class DummyTimeKeeper(object):
     def __next__(self):
         return None
 
+    def __iter__(self):
+        return self
+
 
 class DummyMediator(object):
-    def __init__(self, source):
+    def __init__(self, source, time_keeper=None):
         self.source = source
-        self.time_keeper = DummyTimeKeeper()
+        self.time_keeper = time_keeper or DummyTimeKeeper()
 
     def time_keeping(self):
-        return self.time_keeper
+        return iter(self.time_keeper)
 
     def wait(self):
-        pass
+        self.time_keeper.wait()
 
     def read(self):
         return self.source.shift_message()
@@ -68,6 +74,9 @@ class DummyMediator(object):
     def find_channel(self, name):
         return self.source.find_channel(name)
 
+    def connect(self):
+        pass
+
 
 class DummySource(object):
     def __init__(self, pool):
@@ -79,7 +88,8 @@ class DummySource(object):
 
     def shift_message(self):
         item = self.queue[-1]
-        self.queue.append([])
+        if item:
+            self.queue.append([])
         return item
 
     def generate_channel(self, name):
@@ -102,13 +112,13 @@ class DummyContext(object):
     debug = True
 
 
-def dummy_source(pool=None):
-    pool = pool or ChannelPool(DummyChannel)
+def dummy_source(pool=None, Channel=DummyChannel):
+    pool = pool or ChannelPool(Channel)
     return DummySource(pool)
 
 
-def dummy_bot(plugins, source):
-    mediator = DummyMediator(source)
+def dummy_bot(plugins, source, time_keeper=None):
+    mediator = DummyMediator(source, time_keeper=time_keeper)
     return Bot(mediator, plugins)
 
 

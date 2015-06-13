@@ -68,3 +68,8 @@ class Configurator(object):
 
     def make_app(self, plugins):
         return Bot(SlackMediator(self.context.token), plugins)
+
+    def make_console_app(self, plugins, source):
+        from .testing import dummy_bot
+        from .bot import _TimeKeeper
+        return dummy_bot(plugins, source, _TimeKeeper(0.5))

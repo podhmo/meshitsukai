@@ -5,12 +5,12 @@ from . import logger
 
 
 class _TimeKeeper(object):
-    def __init__(self):
+    def __init__(self, delta=0.1):
         self.need_wait = False
+        self.delta = delta
 
     def wait(self):
-        logger.info("wait")
-        time.sleep(.1)
+        time.sleep(self.delta)
 
     def reset(self):
         self.need_wait = False
