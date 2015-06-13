@@ -50,53 +50,89 @@ class Goroku(Plugin):
         Base.metadata.bind = engine
         Base.metadata.create_all()
 
-    specials = ["$create", "$list"]
-
-    def predicate(self, request):
-        line = request.body.strip()
-        return any(line.startswith(s) for s in self.specials) or any(line.startswith(u) for u in self.users)
-
     @reify
     def users(self):
         return self.get_candidates()
+
+    @reify
+    def command_handler(self):
+        return CommandHandler(self)
 
     def get_candidates(self):
         qs = Session.query(User).with_entities(User.name)
         return set("${}".format(u.name) for u in qs)
 
-    @as_view(predicate="predicate")
+    @as_view()
     @wrap
     def process_message(self, request):
-        name, *args = shlex.split(request.body)
-        if name.startswith("$create"):
-            newname = " ".join(args)
-            self.users.add("${}".format(newname))
-            return create(newname)
-        elif name.startswith("$list"):
-            return "\n".join(u.name for u in Session.query(User).all())
+        command, *args = shlex.split(request.body)
+        handler = CommandHandler(self)
+        if command in handler:
+            return handler(command, *args)
 
-        name = name[1:]  # "$foo" -> "foo"
+        name = command[1:]  # "$foo" -> "foo"
         user = Session.query(User).filter(User.name == name).first()
         if user is None:
             return ""
-        if not args:
-            return get(user)
+        handler = UserHandler(user)
+        if len(args) <= 0:
+            return handler.get()
+
+        subcommand, *args = args
+        if subcommand in handler:
+            return handler(subcommand, *args)
         else:
-            return post(user, " ".join(args))
+            # $<user> <subcommand>
+            return handler.add(subcommand)
 
 
-def create(name):
-    Session.add(User(name=name))
-    return "ok"
+class Handler(object):
+    def __contains__(self, name):
+        return name.startswith("$") and hasattr(self, name[1:])
+
+    def __call__(self, name, *args, **kwargs):
+        return getattr(self, name[1:])(*args, **kwargs)
 
 
-def get(user):
-    if len(user.messages) <= 0:
-        return ""
-    return random.choice(user.messages).content
+class CommandHandler(Handler):
+    def __init__(self, plugin):
+        self.plugin = plugin
+
+    def list(self, *args):
+        return "\n".join(u.name for u in Session.query(User).all())
+
+    def create(self, name, *args):
+        if Session.query(Session.query(User).filter(User.name == name).exists()).scalar():
+            return "ng"
+        Session.add(User(name=name))
+        self.plugin.users.add("${}".format(name))
+        return "ok"
+
+    def delete(self, name, *args):
+        qs = Session.query(User).filter(User.name == name)
+        if not Session.query(qs.exists()).scalar():
+            return "ng"
+        qs.delete()
+        return "ok"
 
 
-def post(user, message):
-    message = UserMessage(user=user, content=message)
-    Session.add(message)
-    return "ok"
+class UserHandler(Handler):
+    def __init__(self, user):
+        self.user = user
+
+    def add(self, message, *args):
+        message = UserMessage(user=self.user, content=message)
+        Session.add(message)
+        return "ok"
+
+    def remove(self, message, *args):
+        Session.query(UserMessage).filter(UserMessage.content == message).delete()
+        return "ok"
+
+    def list(self, *args):
+        return "\n".join("- {}".format(m.content[:100]) for m in self.user.messages)
+
+    def get(self):
+        if len(self.user.messages) <= 0:
+            return ""
+        return random.choice(self.user.messages).content
