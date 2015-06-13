@@ -1,0 +1,11 @@
+[Core]
+name = goroku
+module = goroku
+
+[Document]
+author = podhmo
+description = goroku plugin
+
+[option]
+db = string // e.g. sqlite:///:memory:
+echo = false

@@ -5,3 +5,6 @@ module = hello
 [Document]
 author = podhmo
 description = simple hello plugin
+
+[Option]
+template = string // e.g. <@{user}> `*hello*` !!
