@@ -25,8 +25,12 @@ writing config file. such as below. ::
   DEBUG = false
   DAEMON = false
 
+  [hello]
+  template = <@{user}> `*hello*` !!
+
 - `slack_token` is api token of slack.
 - `plugin_directory` is a location of directory stored your plugins
+- (hello section is a plugin's option describe at below)
 
 run `meshitsukai` ::
 
@@ -45,8 +49,8 @@ file structure ::
   .
   ├── plugins
   │   ├── __init__.py
-  │   ├── dummy.plugin
-  │   └── dummy.py
+  │   ├── hello.plugin
+  │   └── hello.py
   └── config.ini
 
 
@@ -57,21 +61,22 @@ plugin implemntation
 
 ::
 
-
   from meshitsukai.plugin import Plugin
+  from meshitsukai.view import as_view
 
 
-  class DummyPlugin(Plugin):
-      # ## instance variables ##
-      # self.outputs
-      # self.crontable
+  class Hello(Plugin):
+      def in_hello(self, request):
+          return "hello" in request.body.lower()
 
-      def process_message(self, data):
-          print("---------- incomming: ----------")
-          # data : {'ts': '1433670154.000003', 'type': 'message', 'team': 'XxxXXXXXX', 'text': 'aa', 'user': 'XxxXXxxXX', 'channel': 'XxxXXXXXx'}
-          print(data)
-          print("--------------------------------")
-          self.outputs.append((data["channel"], "`*dummy*`"))
+      @property
+      def template(self):
+          return self.settings.get("template") or "hello <@{user}>"
+
+      @as_view(predicate="in_hello")
+      def process_message(self, request):
+          return self.template.format(user=request.user)
+
 
 info file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,9 +86,9 @@ info file
 ::
 
   [Core]
-  name = dummy
-  module = dummy
+  name = hello
+  module = hello
 
   [Document]
   author = podhmo
-  description = simple dummy plugin
+  description = simple hello plugin
