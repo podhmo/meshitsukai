@@ -37,7 +37,8 @@ def main(sys_args=None):
     setup_logging(args)
 
     configurator = Configurator.from_ini_file(args.config)
-    plugins = configurator.load_plugins([e.strip() for e in args.plugins.split(",")])
+    plugin_names = args.plugins and [e.strip() for e in args.plugins.split(",")]
+    plugins = configurator.load_plugins(plugin_names)
     bot = configurator.make_app(plugins)
 
     DAEMON = configurator.context.is_daemon
