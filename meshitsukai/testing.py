@@ -28,6 +28,10 @@ class ChannelPool(object):
             self.pool[name] = self.Channel(name)
         return self.pool[name]
 
+    def __iter__(self):
+        for ch in sorted(self.pool.values(), key=lambda ch: ch.name):
+            yield ch
+
 
 class DummyTimeKeeper(object):
     def wait(self):
