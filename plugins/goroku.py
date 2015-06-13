@@ -50,6 +50,9 @@ class Goroku(Plugin):
         Base.metadata.bind = engine
         Base.metadata.create_all()
 
+    def predicate(self, request):
+        return request.body.startswith("$")
+
     @reify
     def users(self):
         return self.get_candidates()
@@ -62,7 +65,7 @@ class Goroku(Plugin):
         qs = Session.query(User).with_entities(User.name)
         return set("${}".format(u.name) for u in qs)
 
-    @as_view()
+    @as_view(predicate="predicate")
     @wrap
     def process_message(self, request):
         command, *args = shlex.split(request.body)
