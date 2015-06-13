@@ -29,12 +29,34 @@ class ChannelPool(object):
         return self.pool[name]
 
 
+class DummyTimeKeeper(object):
+    def wait(self):
+        pass
+
+    def __next__(self):
+        return None
+
+
 class DummyMediator(object):
     def __init__(self, source):
         self.source = source
+        self.time_keeper = DummyTimeKeeper()
+
+    def time_keeping(self):
+        return self.time_keeper
+
+    def wait(self):
+        pass
 
     def read(self):
         return self.source.shift_message()
+
+    def send(self, output, wait_itr):
+        channel_id, message = output
+        channel = self.find_channel(channel_id)
+        if channel is not None and message is not None:
+            next(wait_itr)
+            channel.send_message(message)
 
     def ping(self):
         pass
@@ -72,17 +94,6 @@ class DummySource(object):
         return result
 
 
-class DummyBot(Bot):
-    def _wait(self):
-        pass
-
-    def autoping(self):
-        pass
-
-    def __init__(self, mediator, plugins):
-        super(DummyBot, self).__init__(mediator, plugins)
-
-
 class DummyContext(object):
     debug = True
 
@@ -94,7 +105,7 @@ def dummy_source(pool=None):
 
 def dummy_bot(plugins, source):
     mediator = DummyMediator(source)
-    return DummyBot(mediator, plugins)
+    return Bot(mediator, plugins)
 
 
 def dummy_plugin(cls, *args, _context=None, **kwargs):

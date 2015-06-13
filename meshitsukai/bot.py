@@ -4,13 +4,48 @@ from slackclient import SlackClient
 from . import logger
 
 
+class _TimeKeeper(object):
+    def __init__(self):
+        self.need_wait = False
+
+    def wait(self):
+        logger.info("wait")
+        time.sleep(.1)
+
+    def reset(self):
+        self.need_wait = False
+
+    def __iter__(self):
+        while True:
+            if self.need_wait is True:
+                self.wait()
+                self.need_wait = False
+            yield
+            self.need_wait = True
+
+
 class SlackMediator(object):
     def __init__(self, token):
         self.token = token
         self.slack_client = SlackClient(self.token)
+        self.time_keeper = _TimeKeeper()
+
+    def time_keeping(self):
+        self.time_keeper.reset()
+        return iter(self.time_keeper)
+
+    def wait(self):
+        self.time_keeper.wait()
 
     def read(self):
         return self.slack_client.rtm_read()
+
+    def send(self, output, wait_itr):
+        channel_id, message = output
+        channel = self.find_channel(channel_id)
+        if channel is not None and message is not None:
+            next(wait_itr)
+            channel.send_message(message)
 
     def ping(self):
         return self.slack_client.server.ping()
@@ -30,9 +65,6 @@ class Bot(object):
         self.bot_plugins = plugins or []
         self.mediator = mediator
 
-    def _wait(self):
-        time.sleep(.1)
-
     def connect(self):
         self.mediator.connect()
 
@@ -47,7 +79,7 @@ class Bot(object):
         self.crons()
         self.output()
         self.autoping()
-        self._wait()
+        self.mediator.wait()
 
     def autoping(self):
         # hardcode the interval to 3 seconds
@@ -65,17 +97,10 @@ class Bot(object):
                 plugin.do(function_name, data)
 
     def output(self):
+        wait_itr = self.mediator.time_keeping()  # xxx
         for plugin in self.bot_plugins:
-            limiter = False
             for output in plugin.do_output():
-                channel = self.mediator.find_channel(output[0])
-                if channel is not None and output[1] is not None:
-                    if limiter is True:
-                        self._wait()
-                        limiter = False
-                    message = output[1]
-                    channel.send_message("{}".format(message))
-                    limiter = True
+                self.mediator.send(output, wait_itr)
 
     def crons(self):
         for plugin in self.bot_plugins:
