@@ -37,6 +37,24 @@ class Console(Cmd):
             print(line)
 
 
+def main(configurator, plugins):
+    from meshitsukai.testing import dummy_source, DummyChannel
+    from meshitsukai.console import Console
+    from functools import partial
+    import threading
+
+    def cont(message):
+        print("\n\t{}".format("\n\t".join(message.split("\n"))))
+
+    source = dummy_source(Channel=partial(DummyChannel, cont=cont))
+    default_channel = source.generate_channel("general")
+    bot = configurator.make_console_app(plugins, source)
+    t = threading.Thread(target=bot.start)
+    t.start()  # orphan?
+    console = Console(source, default_channel)
+    console.cmdloop()
+
+
 if __name__ == "__main__":
     from meshitsukai.testing import dummy_source
     source = dummy_source()

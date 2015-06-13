@@ -45,30 +45,17 @@ def main(sys_args=None):
         bot = configurator.make_app(plugins)
         serve(bot, configurator.context)
     else:
-        from meshitsukai.testing import dummy_source, DummyChannel
-        from meshitsukai.console import Console
-        from functools import partial
-        import threading
-
-        def cont(message):
-            print("\n\t{}".format("\n\t".join(message.split("\n"))))
-
-        source = dummy_source(Channel=partial(DummyChannel, cont=cont))
-        default_channel = source.generate_channel("general")
-        bot = configurator.make_console_app(plugins, source)
-        t = threading.Thread(target=bot.start)
-        t.start()  # orphan?
-        console = Console(source, default_channel)
-        console.cmdloop()
+        from meshitsukai.console import main as console_main
+        console_main(configurator, plugins)
 
 
 def serve(bot, context):
     DAEMON = context.is_daemon
     logger.debug("running as daemon? .. %s", DAEMON)
     if DAEMON:
-            import daemon
-            with daemon.DaemonContext():
-                main_loop(bot)
+        import daemon
+        with daemon.DaemonContext():
+            main_loop(bot)
     else:
         main_loop(bot)
 
