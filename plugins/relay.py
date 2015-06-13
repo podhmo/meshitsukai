@@ -19,15 +19,29 @@ ok
 
 # on shell
 curl http://localhost:4444 -X POST -d key=cfce4dcf4fa549dcb28344c3a41fecf4 -d message="foo"
+
+# option settings
+# (section name is <Plugin Class>.__name__.lower())
+[relay]
+port = 4444
 """
 
 
-class RelayPlugin(Plugin):
+class Relay(Plugin):
     def __init__(self):
-        super(RelayPlugin, self).__init__()
+        super(Relay, self).__init__()
         self.tmp = set()
         self.keys = {}
-        httpd = make_server("localhost", 4444, App(self))
+
+    @property
+    def port(self):
+        return int(self.settings.get("port", "4444"))
+
+    def setup(self, context):
+        super(Relay, self).setup(context)
+
+        httpd = make_server("localhost", self.port, App(self))
+        logger.info("running server port={port}".format(port=self.port))
         self.t = threading.Thread(target=httpd.serve_forever)
         self.t.start()
 
@@ -40,7 +54,7 @@ class RelayPlugin(Plugin):
         if key not in self.tmp:
             return "ng"
         self.keys[key] = request.channel
-        return "ok: `curl http://localhost:4444 -X POST -d key={key} -d message`".format(key=key)
+        return "ok: `curl http://localhost:{port} -X POST -d key={key} -d message`".format(key=key, port=self.port)
 
     def relay(self, key, message):
         channel = self.keys[key]

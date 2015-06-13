@@ -12,8 +12,16 @@ class Plugin(IPlugin):
         self.outputs = []
         self.config = None
 
+    @property
+    def section_name(self):
+        return self.__class__.__name__.lower()
+
     def setup(self, context):
         self.context = context
+        try:
+            self.settings = context.config[self.section_name]
+        except KeyError:
+            self.settings = {}
 
     def catch_all(self, data):
         pass
