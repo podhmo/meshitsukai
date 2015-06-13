@@ -43,7 +43,7 @@ def main(sys_args=None):
 
     if not args.console:
         bot = configurator.make_app(plugins)
-        serve(bot)
+        serve(bot, configurator.context)
     else:
         from meshitsukai.testing import dummy_source, DummyChannel
         from meshitsukai.console import Console
@@ -62,8 +62,8 @@ def main(sys_args=None):
         console.cmdloop()
 
 
-def serve(bot):
-    DAEMON = bot.context.is_daemon
+def serve(bot, context):
+    DAEMON = context.is_daemon
     logger.debug("running as daemon? .. %s", DAEMON)
     if DAEMON:
             import daemon
